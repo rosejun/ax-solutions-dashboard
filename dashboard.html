@@ -1,0 +1,558 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AX Solutions - Sales Dashboard</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+<style>
+  :root {
+    --bg: #0f1117;
+    --card: #1a1d27;
+    --border: #2a2d3a;
+    --text: #e4e4e7;
+    --muted: #71717a;
+    --accent: #6366f1;
+    --green: #22c55e;
+    --red: #ef4444;
+    --yellow: #eab308;
+    --blue: #3b82f6;
+    --purple: #a855f7;
+    --orange: #f97316;
+    --cyan: #06b6d4;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.6;
+  }
+  .header {
+    background: linear-gradient(135deg, #1e1b4b 0%, #312e81 100%);
+    padding: 32px 40px;
+    border-bottom: 1px solid var(--border);
+  }
+  .header h1 {
+    font-size: 28px;
+    font-weight: 700;
+    letter-spacing: -0.5px;
+  }
+  .header p { color: var(--muted); font-size: 14px; margin-top: 4px; }
+  .section-header {
+    padding: 24px 40px 8px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .section-header h2 {
+    font-size: 20px;
+    font-weight: 600;
+  }
+  .section-header .badge {
+    background: var(--accent);
+    color: white;
+    font-size: 11px;
+    font-weight: 600;
+    padding: 2px 10px;
+    border-radius: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  .section-desc {
+    padding: 0 40px 16px;
+    color: var(--muted);
+    font-size: 13px;
+  }
+  .grid { display: grid; gap: 16px; padding: 0 40px 24px; }
+  .grid-4 { grid-template-columns: repeat(4, 1fr); }
+  .grid-3 { grid-template-columns: repeat(3, 1fr); }
+  .grid-2 { grid-template-columns: repeat(2, 1fr); }
+  .grid-1 { grid-template-columns: 1fr; }
+  .card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 20px;
+  }
+  .card-title {
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 8px;
+  }
+  .kpi {
+    font-size: 36px;
+    font-weight: 700;
+    letter-spacing: -1px;
+  }
+  .kpi-sub {
+    font-size: 13px;
+    color: var(--muted);
+    margin-top: 4px;
+  }
+  .kpi-green { color: var(--green); }
+  .kpi-red { color: var(--red); }
+  .kpi-blue { color: var(--blue); }
+  .kpi-yellow { color: var(--yellow); }
+  .kpi-purple { color: var(--purple); }
+  .chart-container {
+    position: relative;
+    width: 100%;
+    height: 280px;
+  }
+  .chart-container.tall { height: 350px; }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+  }
+  th {
+    text-align: left;
+    padding: 10px 12px;
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    border-bottom: 1px solid var(--border);
+  }
+  td {
+    padding: 10px 12px;
+    border-bottom: 1px solid var(--border);
+  }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: rgba(99,102,241,0.05); }
+  .tag {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 6px;
+    font-size: 11px;
+    font-weight: 600;
+  }
+  .tag-green { background: rgba(34,197,94,0.15); color: var(--green); }
+  .tag-red { background: rgba(239,68,68,0.15); color: var(--red); }
+  .tag-yellow { background: rgba(234,179,8,0.15); color: var(--yellow); }
+  .tag-blue { background: rgba(59,130,246,0.15); color: var(--blue); }
+  .divider {
+    height: 1px;
+    background: var(--border);
+    margin: 8px 40px;
+  }
+  .bar-inline {
+    height: 6px;
+    border-radius: 3px;
+    background: var(--border);
+    margin-top: 6px;
+  }
+  .bar-fill {
+    height: 100%;
+    border-radius: 3px;
+    transition: width 0.6s ease;
+  }
+  @media (max-width: 900px) {
+    .grid-4 { grid-template-columns: repeat(2, 1fr); }
+    .grid-3 { grid-template-columns: repeat(2, 1fr); }
+    .grid-2 { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>AX Solutions Team</h1>
+  <p>Sales Performance Dashboard &mdash; 2026-04-29</p>
+</div>
+
+<!-- ====== TOP VIEW: EXECUTIVE SUMMARY ====== -->
+<div class="section-header">
+  <h2>Executive Summary</h2>
+  <span class="badge">Top View</span>
+</div>
+<div class="section-desc">30-second overview of revenue health and pipeline momentum.</div>
+
+<div class="grid grid-4" id="kpi-row"></div>
+<div class="grid grid-2">
+  <div class="card">
+    <div class="card-title">Pipeline Value by Stage (Funnel)</div>
+    <div class="chart-container"><canvas id="funnelChart"></canvas></div>
+  </div>
+  <div class="card">
+    <div class="card-title">Deal Outcome Distribution</div>
+    <div class="chart-container"><canvas id="outcomeChart"></canvas></div>
+  </div>
+</div>
+
+<div class="divider"></div>
+
+<!-- ====== MID VIEW: PIPELINE HEALTH ====== -->
+<div class="section-header">
+  <h2>Pipeline Health</h2>
+  <span class="badge">Mid View</span>
+</div>
+<div class="section-desc">Identify bottlenecks, leakage, and channel effectiveness.</div>
+
+<div class="grid grid-2">
+  <div class="card">
+    <div class="card-title">Stage-to-Stage Conversion Rate (%)</div>
+    <div class="chart-container tall"><canvas id="convChart"></canvas></div>
+  </div>
+  <div class="card">
+    <div class="card-title">Deal Count by Stage</div>
+    <div class="chart-container tall"><canvas id="stageCountChart"></canvas></div>
+  </div>
+</div>
+
+<div class="grid grid-3">
+  <div class="card">
+    <div class="card-title">Source Channel - Deal Count</div>
+    <div class="chart-container"><canvas id="sourceCountChart"></canvas></div>
+  </div>
+  <div class="card">
+    <div class="card-title">Source Channel - Pipeline Value</div>
+    <div class="chart-container"><canvas id="sourceValueChart"></canvas></div>
+  </div>
+  <div class="card">
+    <div class="card-title">Lost Reasons</div>
+    <div class="chart-container"><canvas id="lostReasonChart"></canvas></div>
+  </div>
+</div>
+
+<div class="grid grid-2">
+  <div class="card">
+    <div class="card-title">Label Distribution (Open Deals)</div>
+    <div class="chart-container"><canvas id="labelChart"></canvas></div>
+  </div>
+  <div class="card">
+    <div class="card-title">Source Channel Win Count</div>
+    <div class="chart-container"><canvas id="sourceWonChart"></canvas></div>
+  </div>
+</div>
+
+<div class="divider"></div>
+
+<!-- ====== BOTTOM VIEW: DEAL-LEVEL DETAIL ====== -->
+<div class="section-header">
+  <h2>Deal-Level Performance</h2>
+  <span class="badge">Bottom View</span>
+</div>
+<div class="section-desc">Individual deal tracking, aging alerts, and rep performance.</div>
+
+<div class="grid grid-2">
+  <div class="card">
+    <div class="card-title">Owner Performance (All Deals)</div>
+    <div class="chart-container"><canvas id="ownerChart"></canvas></div>
+  </div>
+  <div class="card">
+    <div class="card-title">Owner - Won Revenue</div>
+    <div class="chart-container"><canvas id="ownerValueChart"></canvas></div>
+  </div>
+</div>
+
+<div class="grid grid-1">
+  <div class="card">
+    <div class="card-title">Won Deals (Closed Revenue)</div>
+    <div id="wonTable"></div>
+  </div>
+</div>
+
+<div class="grid grid-1">
+  <div class="card">
+    <div class="card-title">Open Deals - Aging Report</div>
+    <div id="agingTable"></div>
+  </div>
+</div>
+
+<div style="padding: 40px; text-align: center; color: var(--muted); font-size: 12px;">
+  Generated from Pipedrive API &mdash; AX Solutions Team Dashboard
+</div>
+
+<script>
+const DATA = {"open_count": 39, "won_count": 18, "lost_count": 47, "open_value": 1694250000.0, "won_value": 681180000.0, "lost_value": 60500000.0, "total_count": 104, "win_rate": 27.7, "stage_labels": ["신규 문의", "1차 미팅", "견적서 발송 / 답변대기", "내부 프로세스 대기 중", "계약 논의", "대기 지연 중"], "stage_counts": [6, 5, 6, 4, 6, 12], "stage_values": [0, 0, 645000000.0, 220250000.0, 293000000.0, 536000000.0], "conv_labels": ["위시켓 지원 → 신규 문의", "신규 문의 → 1차 미팅", "1차 미팅 → 견적서 발송 / 답변대기", "견적서 발송 / 답변대기 → 내부 프로세스 대기 중", "내부 프로세스 대기 중 → 계약 논의", "계약 논의 → 거래 성사", "거래 성사 → 대기 지연 중", "대기 지연 중 → 이탈"], "conv_rates": [61.86, 64.13, 67.82, 72.84, 76.62, 83.1, 83.1, 100], "won_conversion": 30, "lost_conversion": 70, "source_labels": ["위시켓-Outbound", "스파르타빌더스", "팀스파르타", "미입력", "위시켓-Inbound"], "source_counts": [37, 33, 23, 9, 2], "source_values": [817700000.0, 981130000.0, 537000000.0, 100100000.0, 0], "source_won": [6, 6, 4, 2, 0], "owner_labels": ["Young Jun Choi", "엄형태", "차은서"], "owner_open": [37, 2, 0], "owner_won": [18, 0, 0], "owner_lost": [42, 4, 1], "owner_won_value": [681180000.0, 0, 0], "label_labels": ["스파르타빌더스", "팀스파르타"], "label_counts": [22, 17], "won_details": [{"title": "[워카토] 신규", "value": 110000000.0, "owner": "Young Jun Choi"}, {"title": "[인터브레인즈] 영어 스피킹 교육 앱 개발 - 신규", "value": 110000000.0, "owner": "Young Jun Choi"}, {"title": "[블랙보드자산운용] 2차 연장개발", "value": 66000000.0, "owner": "Young Jun Choi"}, {"title": "[팀스파르타] 인건비 정산 프로젝트 - 신규", "value": 66000000.0, "owner": "Young Jun Choi"}, {"title": "[수호건축] 사내 ERP 개발 - 신규", "value": 50000000.0, "owner": "Young Jun Choi"}, {"title": "[이티에프룩] 신규", "value": 49500000.0, "owner": "Young Jun Choi"}, {"title": "[창비] 공모전 접수 플랫폼 구축 프로젝트  - 신규", "value": 44000000.0, "owner": "Young Jun Choi"}, {"title": "[도매매(텝)] 도매매 API 연동 쇼핑몰 상품 동기화 및 통합 관리 프로그램 개발 - 신규", "value": 41800000.0, "owner": "Young Jun Choi"}, {"title": "[대한항공] 신규", "value": 28600000.0, "owner": "Young Jun Choi"}, {"title": "[NH농우바이오] Flutter 기반 ERP 연동 사내 모바일 시스템 리뉴얼 - 신규", "value": 22000000.0, "owner": "Young Jun Choi"}, {"title": "[에이아이매틱스] 출입시스템기획) AI 얼굴인식 기반 출입통제/보안 서비스 상세 기획 - 신규", "value": 22000000.0, "owner": "Young Jun Choi"}, {"title": "[판도플랫폼] 피트니스센터 관리 시스템 기획 프로젝트 - 신규", "value": 16500000.0, "owner": "Young Jun Choi"}, {"title": "[브레디스헬스케어] 스마트링 연동 앱 고도화 프로젝트  - 신규", "value": 15400000.0, "owner": "Young Jun Choi"}, {"title": "[브레디스] 1차 연장개발", "value": 13200000.0, "owner": "Young Jun Choi"}, {"title": "[DK메디컬(AI 데모)]  신규", "value": 11000000.0, "owner": "Young Jun Choi"}, {"title": "[셀렉미] 6차 연장개발", "value": 6600000.0, "owner": "Young Jun Choi"}, {"title": "[셀렉미] 5차 연장개발", "value": 6600000.0, "owner": "Young Jun Choi"}, {"title": "[모네상스]  3차 연장개발", "value": 1980000.0, "owner": "Young Jun Choi"}], "open_details": [{"title": "[얀마농기코리아] 농기계 차세대 통합 정비 시스템 구축", "value": 0, "stage": "신규 문의", "owner": "Young Jun Choi", "days": 21}, {"title": "[-] 외부 마켓 상품 통합 주문관리 플랫폼 및 폐쇄형 자사몰 구축", "value": 0, "stage": "신규 문의", "owner": "Young Jun Choi", "days": 21}, {"title": "파크네트웍스 딜", "value": 0, "stage": "1차 미팅", "owner": "Young Jun Choi", "days": 21}, {"title": "BHSN 딜", "value": 0, "stage": "1차 미팅", "owner": "Young Jun Choi", "days": 21}, {"title": "[LG전자] 보급률 데이터 기반 AI Agent 및 대시보드 구축", "value": 0, "stage": "신규 문의", "owner": "Young Jun Choi", "days": 21}, {"title": "펜타브리드 딜", "value": 180000000.0, "stage": "견적서 발송 / 답변대기", "owner": "Young Jun Choi", "days": 21}, {"title": "에이치투인터렉티브 딜", "value": 0, "stage": "1차 미팅", "owner": "Young Jun Choi", "days": 21}, {"title": "[아크앤파트너스]  신규", "value": 180000000.0, "stage": "대기 지연 중", "owner": "Young Jun Choi", "days": 21}, {"title": "[-] 독립형 온라인 강의 플랫폼(LMS) 구축 및 데이터 이관", "value": 0, "stage": "1차 미팅", "owner": "Young Jun Choi", "days": 21}, {"title": "[컨비니언스] 신규", "value": 0, "stage": "대기 지연 중", "owner": "Young Jun Choi", "days": 21}, {"title": "[럭시플로라] MRO 판촉물 중개 플랫폼 구축", "value": 0, "stage": "1차 미팅", "owner": "Young Jun Choi", "days": 21}, {"title": "[러닝팩토리] LMS 플랫폼 및 AI 챗봇  - 신규", "value": 52250000.0, "stage": "내부 프로세스 대기 중", "owner": "Young Jun Choi", "days": 21}, {"title": "[DK메디컬] 사내 자동화", "value": 245000000.0, "stage": "견적서 발송 / 답변대기", "owner": "Young Jun Choi", "days": 21}, {"title": "디웍스 딜", "value": 105000000.0, "stage": "견적서 발송 / 답변대기", "owner": "Young Jun Choi", "days": 21}, {"title": "[창신] AX-2", "value": 50000000.0, "stage": "계약 논의", "owner": "Young Jun Choi", "days": 21}, {"title": "[창신] AX-3", "value": 50000000.0, "stage": "계약 논의", "owner": "Young Jun Choi", "days": 21}, {"title": "[창신] AX-1", "value": 50000000.0, "stage": "계약 논의", "owner": "Young Jun Choi", "days": 21}, {"title": "자이C&A 딜", "value": 45000000.0, "stage": "견적서 발송 / 답변대기", "owner": "Young Jun Choi", "days": 21}, {"title": "아동권리보장원 딜", "value": 20000000.0, "stage": "견적서 발송 / 답변대기", "owner": "Young Jun Choi", "days": 21}, {"title": "[그린글로브라인] LCL/FCL 내륙 운송비 산출 웹 플랫폼 및 AI 파싱 기능 개발 - 신규", "value": 38000000.0, "stage": "내부 프로세스 대기 중", "owner": "Young Jun Choi", "days": 21}, {"title": "[지제이전기통신] 이카운트 ERP 실시간 연동 기반 자재 전문 B2B/B2C 독립형 쇼핑몰 구축", "value": 50000000.0, "stage": "견적서 발송 / 답변대기", "owner": "Young Jun Choi", "days": 21}, {"title": "한국항공우주 딜", "value": 0, "stage": "내부 프로세스 대기 중", "owner": "Young Jun Choi", "days": 21}, {"title": "[세방전지] 고객 데이터 자산화를 위한 디지털 보증서 및 CRM 연계 시스템 구축", "value": 130000000.0, "stage": "내부 프로세스 대기 중", "owner": "Young Jun Choi", "days": 21}, {"title": "[크레프트코드] 4차 유지보수", "value": 15000000.0, "stage": "계약 논의", "owner": "Young Jun Choi", "days": 21}, {"title": "[-] AI 기반 농산물 마켓 타이밍 분석 및 스마트 창고 관리 시스템 - 신규", "value": 80000000.0, "stage": "계약 논의", "owner": "Young Jun Choi", "days": 21}, {"title": "[피트인] 유지보수 2차", "value": 48000000.0, "stage": "계약 논의", "owner": "Young Jun Choi", "days": 21}, {"title": "[닉스] 글로벌 언어 교환 소셜 플랫폼(HelloTalk 벤치마킹) 앱 구축 - 신규", "value": 90000000.0, "stage": "대기 지연 중", "owner": "Young Jun Choi", "days": 21}, {"title": "[태권도연맹(이지미디어)] 스포츠 규정 및 데이터 기반 AI 챗봇 서비스 개발 - 신규", "value": 0, "stage": "대기 지연 중", "owner": "Young Jun Choi", "days": 21}, {"title": "[신도트립] 신규", "value": 0, "stage": "대기 지연 중", "owner": "Young Jun Choi", "days": 21}, {"title": "[케이트러커] PHP 기반 하이브리드 앱 리뉴얼 및 기능 개선 - 신규", "value": 80000000.0, "stage": "대기 지연 중", "owner": "Young Jun Choi", "days": 21}, {"title": "[유비덤] 도소매 업체 전용 볼트 쇼핑몰 및 모바일 재고/발주 시스템 개발 - 신규", "value": 45000000.0, "stage": "대기 지연 중", "owner": "Young Jun Choi", "days": 21}, {"title": "[서초문화재단] 신규", "value": 100000000.0, "stage": "대기 지연 중", "owner": "Young Jun Choi", "days": 21}, {"title": "[모네상스] 2차 추가개발", "value": 30000000.0, "stage": "대기 지연 중", "owner": "Young Jun Choi", "days": 21}, {"title": "[플렉스지] 신규", "value": 0, "stage": "대기 지연 중", "owner": "Young Jun Choi", "days": 21}, {"title": "[샤방넷] 신규", "value": 0, "stage": "대기 지연 중", "owner": "Young Jun Choi", "days": 21}, {"title": "[쿠팡CS] 신규", "value": 11000000.0, "stage": "대기 지연 중", "owner": "Young Jun Choi", "days": 21}, {"title": "두원중공업 딜", "value": 0, "stage": "신규 문의", "owner": "엄형태", "days": 12}, {"title": "모비데이즈 딜", "value": 0, "stage": "신규 문의", "owner": "Young Jun Choi", "days": 12}, {"title": "산은인프라자산운용 딜", "value": 0, "stage": "신규 문의", "owner": "엄형태", "days": 12}], "lost_reason_labels": ["확인 필요", "이탈", "비용 협상 이슈", "컨택 lost", "타사와 계약 체결"], "lost_reason_counts": [1, 43, 1, 1, 1]};
+
+Chart.defaults.color = '#71717a';
+Chart.defaults.borderColor = '#2a2d3a';
+Chart.defaults.font.family = "-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif";
+
+const COLORS = ['#6366f1','#3b82f6','#06b6d4','#22c55e','#eab308','#f97316','#ef4444','#a855f7','#ec4899'];
+
+function fmt(n) {
+  if (n >= 100000000) return (n/100000000).toFixed(1) + '억';
+  if (n >= 10000) return (n/10000).toFixed(0) + '만';
+  return n.toLocaleString();
+}
+
+// KPI Cards
+const kpis = [
+  { title: 'Total Pipeline', value: fmt(DATA.open_value) + '원', sub: DATA.open_count + ' open deals', cls: 'kpi-blue' },
+  { title: 'Won Revenue', value: fmt(DATA.won_value) + '원', sub: DATA.won_count + ' deals closed', cls: 'kpi-green' },
+  { title: 'Win Rate', value: DATA.win_rate + '%', sub: 'Won / (Won+Lost)', cls: DATA.win_rate >= 30 ? 'kpi-green' : 'kpi-yellow' },
+  { title: 'Lost Deals', value: DATA.lost_count + '건', sub: fmt(DATA.lost_value) + '원 lost', cls: 'kpi-red' },
+];
+const kpiRow = document.getElementById('kpi-row');
+kpis.forEach(k => {
+  kpiRow.innerHTML += `<div class="card"><div class="card-title">${k.title}</div><div class="kpi ${k.cls}">${k.value}</div><div class="kpi-sub">${k.sub}</div></div>`;
+});
+
+// Funnel (horizontal bar - value)
+new Chart(document.getElementById('funnelChart'), {
+  type: 'bar',
+  data: {
+    labels: DATA.stage_labels,
+    datasets: [{
+      data: DATA.stage_values,
+      backgroundColor: COLORS.slice(0, DATA.stage_labels.length),
+      borderRadius: 6,
+      barThickness: 28,
+    }]
+  },
+  options: {
+    indexAxis: 'y',
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: { display: false },
+      tooltip: { callbacks: { label: ctx => fmt(ctx.raw) + '원' } }
+    },
+    scales: {
+      x: { ticks: { callback: v => fmt(v) }, grid: { color: '#2a2d3a' } },
+      y: { grid: { display: false } }
+    }
+  }
+});
+
+// Outcome donut
+new Chart(document.getElementById('outcomeChart'), {
+  type: 'doughnut',
+  data: {
+    labels: ['Open', 'Won', 'Lost'],
+    datasets: [{
+      data: [DATA.open_count, DATA.won_count, DATA.lost_count],
+      backgroundColor: ['#3b82f6', '#22c55e', '#ef4444'],
+      borderWidth: 0,
+    }]
+  },
+  options: {
+    responsive: true,
+    maintainAspectRatio: false,
+    cutout: '65%',
+    plugins: {
+      legend: { position: 'bottom', labels: { padding: 16, usePointStyle: true } },
+      tooltip: { callbacks: { label: ctx => ctx.label + ': ' + ctx.raw + '건' } }
+    }
+  }
+});
+
+// Conversion rate (horizontal bar)
+new Chart(document.getElementById('convChart'), {
+  type: 'bar',
+  data: {
+    labels: DATA.conv_labels,
+    datasets: [{
+      data: DATA.conv_rates,
+      backgroundColor: DATA.conv_rates.map(r => r > 2 ? '#22c55e' : r > 1 ? '#eab308' : '#ef4444'),
+      borderRadius: 6,
+      barThickness: 24,
+    }]
+  },
+  options: {
+    indexAxis: 'y',
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: { display: false },
+      tooltip: { callbacks: { label: ctx => ctx.raw + '%' } }
+    },
+    scales: {
+      x: { ticks: { callback: v => v + '%' }, grid: { color: '#2a2d3a' } },
+      y: { grid: { display: false }, ticks: { font: { size: 11 } } }
+    }
+  }
+});
+
+// Stage count bar
+new Chart(document.getElementById('stageCountChart'), {
+  type: 'bar',
+  data: {
+    labels: DATA.stage_labels,
+    datasets: [{
+      label: 'Deals',
+      data: DATA.stage_counts,
+      backgroundColor: COLORS.slice(0, DATA.stage_labels.length),
+      borderRadius: 6,
+      barThickness: 32,
+    }]
+  },
+  options: {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: { legend: { display: false } },
+    scales: {
+      y: { ticks: { stepSize: 2 }, grid: { color: '#2a2d3a' } },
+      x: { grid: { display: false }, ticks: { font: { size: 11 } } }
+    }
+  }
+});
+
+// Source count
+new Chart(document.getElementById('sourceCountChart'), {
+  type: 'doughnut',
+  data: {
+    labels: DATA.source_labels,
+    datasets: [{
+      data: DATA.source_counts,
+      backgroundColor: COLORS,
+      borderWidth: 0,
+    }]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false, cutout: '55%',
+    plugins: { legend: { position: 'bottom', labels: { padding: 12, usePointStyle: true, font: { size: 11 } } } }
+  }
+});
+
+// Source value bar
+new Chart(document.getElementById('sourceValueChart'), {
+  type: 'bar',
+  data: {
+    labels: DATA.source_labels,
+    datasets: [{
+      data: DATA.source_values,
+      backgroundColor: COLORS.slice(0, DATA.source_labels.length),
+      borderRadius: 6,
+    }]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    plugins: { legend: { display: false }, tooltip: { callbacks: { label: ctx => fmt(ctx.raw) + '원' } } },
+    scales: {
+      y: { ticks: { callback: v => fmt(v) }, grid: { color: '#2a2d3a' } },
+      x: { grid: { display: false }, ticks: { font: { size: 11 } } }
+    }
+  }
+});
+
+// Lost reasons
+new Chart(document.getElementById('lostReasonChart'), {
+  type: 'doughnut',
+  data: {
+    labels: DATA.lost_reason_labels,
+    datasets: [{
+      data: DATA.lost_reason_counts,
+      backgroundColor: ['#ef4444','#f97316','#eab308','#a855f7','#6366f1'],
+      borderWidth: 0,
+    }]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false, cutout: '55%',
+    plugins: { legend: { position: 'bottom', labels: { padding: 12, usePointStyle: true, font: { size: 11 } } } }
+  }
+});
+
+// Label chart
+new Chart(document.getElementById('labelChart'), {
+  type: 'doughnut',
+  data: {
+    labels: DATA.label_labels,
+    datasets: [{
+      data: DATA.label_counts,
+      backgroundColor: ['#6366f1','#3b82f6','#22c55e','#eab308'],
+      borderWidth: 0,
+    }]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false, cutout: '55%',
+    plugins: { legend: { position: 'bottom', labels: { padding: 12, usePointStyle: true, font: { size: 11 } } } }
+  }
+});
+
+// Source won
+new Chart(document.getElementById('sourceWonChart'), {
+  type: 'bar',
+  data: {
+    labels: DATA.source_labels,
+    datasets: [{
+      label: 'Won',
+      data: DATA.source_won,
+      backgroundColor: '#22c55e',
+      borderRadius: 6,
+    }]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    plugins: { legend: { display: false } },
+    scales: { y: { ticks: { stepSize: 1 }, grid: { color: '#2a2d3a' } }, x: { grid: { display: false } } }
+  }
+});
+
+// Owner stacked bar
+new Chart(document.getElementById('ownerChart'), {
+  type: 'bar',
+  data: {
+    labels: DATA.owner_labels,
+    datasets: [
+      { label: 'Open', data: DATA.owner_open, backgroundColor: '#3b82f6', borderRadius: 4 },
+      { label: 'Won', data: DATA.owner_won, backgroundColor: '#22c55e', borderRadius: 4 },
+      { label: 'Lost', data: DATA.owner_lost, backgroundColor: '#ef4444', borderRadius: 4 },
+    ]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    plugins: { legend: { position: 'bottom', labels: { padding: 16, usePointStyle: true } } },
+    scales: {
+      x: { stacked: true, grid: { display: false } },
+      y: { stacked: true, grid: { color: '#2a2d3a' } }
+    }
+  }
+});
+
+// Owner won value
+new Chart(document.getElementById('ownerValueChart'), {
+  type: 'bar',
+  data: {
+    labels: DATA.owner_labels,
+    datasets: [{
+      label: 'Won Revenue',
+      data: DATA.owner_won_value,
+      backgroundColor: '#22c55e',
+      borderRadius: 6,
+    }]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    plugins: { legend: { display: false }, tooltip: { callbacks: { label: ctx => fmt(ctx.raw) + '원' } } },
+    scales: { y: { ticks: { callback: v => fmt(v) }, grid: { color: '#2a2d3a' } }, x: { grid: { display: false } } }
+  }
+});
+
+// Won deals table
+const wonHtml = `<table>
+  <tr><th>#</th><th>Deal</th><th>Owner</th><th style="text-align:right">Value</th></tr>
+  ${DATA.won_details.map((d,i) =>
+    `<tr><td>${i+1}</td><td>${d.title}</td><td>${d.owner}</td><td style="text-align:right;font-weight:600;color:#22c55e">${fmt(d.value)}원</td></tr>`
+  ).join('')}
+  <tr style="font-weight:700;border-top:2px solid var(--border)">
+    <td></td><td>Total</td><td></td>
+    <td style="text-align:right;color:#22c55e">${fmt(DATA.won_value)}원</td>
+  </tr>
+</table>`;
+document.getElementById('wonTable').innerHTML = wonHtml;
+
+// Aging table
+function agingTag(days) {
+  if (days >= 30) return '<span class="tag tag-red">' + days + 'D</span>';
+  if (days >= 14) return '<span class="tag tag-yellow">' + days + 'D</span>';
+  return '<span class="tag tag-blue">' + days + 'D</span>';
+}
+const agingHtml = `<table>
+  <tr><th>#</th><th>Deal</th><th>Stage</th><th>Owner</th><th style="text-align:right">Value</th><th style="text-align:center">Age</th></tr>
+  ${DATA.open_details.map((d,i) =>
+    `<tr><td>${i+1}</td><td>${d.title}</td><td>${d.stage}</td><td>${d.owner}</td><td style="text-align:right">${d.value > 0 ? fmt(d.value)+'원' : '<span style="color:var(--muted)">-</span>'}</td><td style="text-align:center">${agingTag(d.days)}</td></tr>`
+  ).join('')}
+</table>`;
+document.getElementById('agingTable').innerHTML = agingHtml;
+</script>
+</body>
+</html>
